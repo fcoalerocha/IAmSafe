@@ -1,0 +1,37 @@
+FROM python:3.9-buster as builder
+
+RUN mkdir /install
+WORKDIR /install
+
+#better copy a requirements file 
+RUN pip install --upgrade pip
+RUN pip install --prefix=/install django djangorestframework 
+RUN pip install --prefix=/install django-allauth dj-rest-auth djangorestframework-simplejwt
+RUN pip install --prefix=/install drf-yasg gunicorn django-cors-headers whitenoise
+
+FROM python:3.9.1-slim
+
+# Keeps Python from generating .pyc files in the container
+ENV PYTHONDONTWRITEBYTECODE 1
+
+ENV PYTHONUNBUFFERED 1
+
+ENV MAIN game
+
+RUN apt-get update; apt-get install -y curl
+
+#Copy dependencies precompiled from builder image
+#this is a multistage build, using this you can get slimmer images
+COPY --from=builder /install /usr/local
+
+WORKDIR /code
+
+# Switching to a non-root user, please refer to https://aka.ms/vscode-docker-python-user-rights
+RUN useradd appuser && chown -R appuser /code
+USER appuser
+
+COPY --chown=appuser:appuser . /code
+
+EXPOSE 8000
+
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

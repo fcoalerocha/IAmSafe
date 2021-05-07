@@ -1,0 +1,12 @@
+version: "3.7"
+
+services:
+  nginx:
+    image: nginx:stable-alpine
+
+  users:
+    build:
+      context: login
+      dockerfile: Dockerfile
+    image: other/users
+    environment: .env
